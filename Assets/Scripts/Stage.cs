@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class Stage : MonoBehaviour
 {
@@ -11,6 +12,11 @@ public class Stage : MonoBehaviour
     public Transform backgroundNode;
     public Transform boardNode;
     public Transform tetrominoNode;
+
+    public GameObject gameoverPanel;
+    public Text score;
+    public Text level;
+    public Text line;
 
     [Header("Setting")]
     [Range(4, 40)]
@@ -29,8 +35,22 @@ public class Stage : MonoBehaviour
 
     private float nextFallTime; // 다음에 테트로미노가 떨어질 시간을 저장
 
+    // UI 관련 변수
+    private int scoreVal = 0;
+    private int levelVal = 1;
+    private int lineVal;
+
     private void Start() // 게임이 시작되고 한 번만 실행
     {
+        // 게임 시작시 text 설정
+        lineVal = levelVal * 2; // 임시 레벨 디자인
+        score.text = "" + scoreVal;
+        level.text = "" + levelVal;
+        line.text = "" + lineVal;
+
+        // 게임 시작시 게임오버 패널 off
+        gameoverPanel.SetActive(false);
+
         halfWidth = Mathf.RoundToInt(boardWidth * 0.5f); // 너비의 중간값 설정해주기
         halfHeight = Mathf.RoundToInt(boardHeight * 0.5f); // 높이의 중간값 설정해주기
 
@@ -54,55 +74,67 @@ public class Stage : MonoBehaviour
 
     void Update() // 매 프레임마다 실행
     {
-        // 초기화
-        Vector3 moveDir = Vector3.zero; // 이동 여부 저장용
-        bool isRotate = false; // 회전 여부 저장용
-
-        // 각 키에 따라 이동 여부 혹은 회전 여부를 설정해줍니다.
-        if (Input.GetKeyDown("a"))
+        // 게임오버 처리
+        if (gameoverPanel.activeSelf)
         {
-            moveDir.x = -1;
-        }
-        else if (Input.GetKeyDown("d"))
-        {
-            moveDir.x = 1;
-        }
-        if (Input.GetKeyDown("w"))
-        {
-            isRotate = true;
-        }
-        else if (Input.GetKeyDown("s"))
-        {
-            moveDir.y = -1;
-        }
-
-        if (Input.GetKeyDown("space"))
-        {
-            // 테크로미노가 바닥에 닿을 때까지 아래로 이동
-            while (MoveTetromino(Vector3.down, false))
+            if (Input.GetKeyDown("r"))
             {
+                SceneManager.LoadScene(0);
             }
         }
-
-        if (Input.GetKeyDown("r"))
+        // 게임 처리
+        else
         {
-            // SceneManager를 이용하여 게임 재시작하기
-            // 가장 위에 using UnityEngine.SceneManagement; 추가 필요
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-        }
+            // 초기화
+            Vector3 moveDir = Vector3.zero; // 이동 여부 저장용
+            bool isRotate = false; // 회전 여부 저장용
 
-        // 아래로 떨어지는 경우는 강제로 이동시킵니다.
-        if (Time.time > nextFallTime)
-        {
-            nextFallTime = Time.time + fallCycle; // 다음 떨어질 시간 재설정
-            moveDir.y = -1; // 아래로 한 칸 이동
-            isRotate = false; // 강제로 이동시 회전 업음
-        }
+            // 각 키에 따라 이동 여부 혹은 회전 여부를 설정해줍니다.
+            if (Input.GetKeyDown("a"))
+            {
+                moveDir.x = -1;
+            }
+            else if (Input.GetKeyDown("d"))
+            {
+                moveDir.x = 1;
+            }
+            if (Input.GetKeyDown("w"))
+            {
+                isRotate = true;
+            }
+            else if (Input.GetKeyDown("s"))
+            {
+                moveDir.y = -1;
+            }
 
-        // 아무런 키 입력이 없을 경우 Tetromino 움직이지 않게 하기
-        if (moveDir != Vector3.zero || isRotate)
-        {
-            MoveTetromino(moveDir, isRotate);
+            if (Input.GetKeyDown("space"))
+            {
+                // 테크로미노가 바닥에 닿을 때까지 아래로 이동
+                while (MoveTetromino(Vector3.down, false))
+                {
+                }
+            }
+
+            if (Input.GetKeyDown("r"))
+            {
+                // SceneManager를 이용하여 게임 재시작하기
+                // 가장 위에 using UnityEngine.SceneManagement; 추가 필요
+                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            }
+
+            // 아래로 떨어지는 경우는 강제로 이동시킵니다.
+            if (Time.time > nextFallTime)
+            {
+                nextFallTime = Time.time + fallCycle; // 다음 떨어질 시간 재설정
+                moveDir.y = -1; // 아래로 한 칸 이동
+                isRotate = false; // 강제로 이동시 회전 업음
+            }
+
+            // 아무런 키 입력이 없을 경우 Tetromino 움직이지 않게 하기
+            if (moveDir != Vector3.zero || isRotate)
+            {
+                MoveTetromino(moveDir, isRotate);
+            }
         }
     }
 
@@ -133,11 +165,15 @@ public class Stage : MonoBehaviour
                 AddToBoard(tetrominoNode);
                 CheckBoardColumn();
                 CreateTetromino();
-            }
 
+                // 테트로미노 새로 추가 직후 이동 가능 확인
+                if (!CanMoveTo(tetrominoNode))
+                {
+                    gameoverPanel.SetActive(true);
+                }
+            }
             return false;
         }
-
         return true;
     }
 
@@ -363,7 +399,7 @@ public class Stage : MonoBehaviour
 
         }
     }
-    // https://wikidocs.net/91263
+    // https://wikidocs.net/91264
 
 
 }
