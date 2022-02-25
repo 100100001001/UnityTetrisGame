@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-public class Stage : MonoBehaviour
+public class Stage2 : MonoBehaviour
 {
     // 필요 소스 불러오기
     [Header("Source")]
@@ -18,7 +18,6 @@ public class Stage : MonoBehaviour
     public Text score;
     public Text level;
     public Text line;
-    public Text result;
 
     [Header("Setting")]
     [Range(4, 40)]
@@ -31,6 +30,8 @@ public class Stage : MonoBehaviour
     // 위치 보정
     public float offset_x = 0f;
     public float offset_y = 0f;
+
+    public int offset2p = 14;
 
     private int halfWidth;
     private int halfHeight;
@@ -82,23 +83,14 @@ public class Stage : MonoBehaviour
 
     void Update() // 매 프레임마다 실행
     {
-        // 게임오버 처리 (둘 다 게임 끝났을 경우)
-        if (gameOn==false&&Stage2.gameOn==false)
+        // 게임오버 처리
+        if (gameoverPanel.activeSelf)
         {
-            if (scoreVal > Stage2.scoreVal)
-                result.text = "1P Win!";
-            else if (scoreVal == Stage2.scoreVal)
-                result.text = "~ Tie ~";
-            else
-                result.text = "2P Win!";
-
-            gameoverPanel.SetActive(true);
             if (Input.GetKeyDown("r"))
             {
                 SceneManager.LoadScene(0);
             }
         }
-
         // 게임 처리
         else
         {
@@ -107,24 +99,24 @@ public class Stage : MonoBehaviour
             bool isRotate = false; // 회전 여부 저장용
 
             // 각 키에 따라 이동 여부 혹은 회전 여부를 설정해줍니다.
-            if (Input.GetKeyDown("a"))
+            if (Input.GetKeyDown("left"))
             {
                 moveDir.x = -1;
             }
-            else if (Input.GetKeyDown("d"))
+            else if (Input.GetKeyDown("right"))
             {
                 moveDir.x = 1;
             }
-            if (Input.GetKeyDown("w"))
+            if (Input.GetKeyDown("up"))
             {
                 isRotate = true;
             }
-            else if (Input.GetKeyDown("s"))
+            else if (Input.GetKeyDown("down"))
             {
                 moveDir.y = -1;
             }
 
-            if (Input.GetKeyDown("space"))
+            if (Input.GetKeyDown("/"))
             {
                 // 테크로미노가 바닥에 닿을 때까지 아래로 이동
                 while (MoveTetromino(Vector3.down, false))
@@ -202,7 +194,7 @@ public class Stage : MonoBehaviour
             var node = root.GetChild(0);
 
             // 유니티 좌표계에서 테트리스 좌표계로 변환
-            int x = Mathf.RoundToInt(node.transform.position.x + halfWidth);
+            int x = Mathf.RoundToInt(node.transform.position.x + halfWidth) - offset2p;
             int y = Mathf.RoundToInt(node.transform.position.y + halfHeight - 1);
 
             // 부모노드 : 행 노드(y 위치), 오브젝트 이름 : x 위치
@@ -253,7 +245,7 @@ public class Stage : MonoBehaviour
             {
                 levelVal += 1; // 레벨 증가
                 lineVal = levelVal * 2 + lineVal; // 남은 라인 갱신
-                Stage2.fallCycle = 0.1f * (10 - levelVal); // 속도 증가
+                Stage.fallCycle = 0.1f * (10 - levelVal); // 속도 증가
             }
             level.text = "" + levelVal;
             line.text = "" + lineVal;
@@ -309,7 +301,7 @@ public class Stage : MonoBehaviour
             var node = root.GetChild(i);
 
             // 유니티 좌표계에서 테트리스 좌표계로 변환
-            int x = Mathf.RoundToInt(node.transform.position.x + halfWidth);
+            int x = Mathf.RoundToInt(node.transform.position.x + halfWidth) - offset2p;
             int y = Mathf.RoundToInt(node.transform.position.y + halfHeight - 1);
 
             // 이동 가능한 좌표인지 확인 후 반환
@@ -351,7 +343,7 @@ public class Stage : MonoBehaviour
         {
             for (int y = halfHeight; y > -halfHeight; --y)
             {
-                CreateTile(backgroundNode, new Vector2(x, y), color, 0);
+                CreateTile(backgroundNode, new Vector2(x + offset2p, y), color, 0);
             }
         }
 
@@ -359,14 +351,14 @@ public class Stage : MonoBehaviour
         color.a = 1.0f;
         for (int y = halfHeight; y > -halfHeight; --y)
         {
-            CreateTile(backgroundNode, new Vector2(-halfWidth - 1, y), color, 0);
-            CreateTile(backgroundNode, new Vector2(halfWidth, y), color, 0);
+            CreateTile(backgroundNode, new Vector2(-halfWidth - 1 + offset2p, y), color, 0);
+            CreateTile(backgroundNode, new Vector2(halfWidth + offset2p, y), color, 0);
         }
 
         // 아래 테두리
         for (int x = -halfWidth - 1; x <= halfWidth; ++x)
         {
-            CreateTile(backgroundNode, new Vector2(x, -halfHeight), color, 0);
+            CreateTile(backgroundNode, new Vector2(x + offset2p, -halfHeight), color, 0);
         }
     }
 
@@ -391,7 +383,7 @@ public class Stage : MonoBehaviour
         //// 테트로미노 생성 위치 (중앙 상단) - 수정 전
         //tetrominoNode.position = new Vector2(0, halfHeight);
         // 테트로미노 생성 위치 (중앙 상단), 값 보정 적용 
-        tetrominoNode.position = new Vector2(offset_x, halfHeight + offset_y);
+        tetrominoNode.position = new Vector2(offset_x + offset2p, halfHeight + offset_y);
 
         switch (index)
         {
@@ -466,7 +458,7 @@ public class Stage : MonoBehaviour
         Color32 color = Color.white;
 
         // 미리보기 테트로미노 생성 위치 (우측 상단)
-        previewNode.position = new Vector2(-(halfWidth + 5), halfHeight - 1);
+        previewNode.position = new Vector2(halfWidth + 5 + offset2p, halfHeight - 1);
 
         switch (indexVal)
         {
@@ -521,6 +513,4 @@ public class Stage : MonoBehaviour
                 break;
         }
     }
-    // https://wikidocs.net/91263
-
 }
